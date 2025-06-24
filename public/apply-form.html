@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EduAid - Apply Now</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .form-step {
+      display: none;
+    }
+    .form-step.active {
+      display: block;
+    }
+    .step-buttons {
+      margin-top: 20px;
+      text-align: right;
+    }
+    .step-buttons button {
+      margin-left: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center" href="index.html">
+      <img src="images/logo.png" alt="EduAid Logo" height="40" class="me-2" />
+      <span class="fw-bold text-success">EduAid</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link text-success" href="index.html">Home</a></li>
+        <li class="nav-item"><a class="nav-link text-success" href="how-it-works.html">How It Works</a></li>
+        <li class="nav-item"><a class="nav-link text-success" href="scholarships.html">Find Your Scholarship</a></li>
+        <li class="nav-item"><a class="nav-link text-success" href="about.html">About Us</a></li>
+        <li class="nav-item"><a class="nav-link text-success" href="news.html">News</a></li>
+      </ul>
+      <a class="btn btn-success ms-3" href="contact.html">Contact Us</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Form Section -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <h2 class="text-center text-success mb-4">Scholarship Application Form</h2>
+    <form id="applicationForm" action="/submit-application" method="POST" enctype="multipart/form-data">
+
+      <!-- Step 1: Personal Info -->
+      <div class="form-step active">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="name" class="form-label">Full Name</label>
+            <input type="text" class="form-control" name="name" required id="name" />
+          </div>
+          <div class="col-md-6">
+            <label for="fatherName" class="form-label">Father's Name</label>
+            <input type="text" class="form-control" name="fatherName" required id="fatherName" />
+          </div>
+          <div class="col-md-6">
+            <label for="dob" class="form-label">Date of Birth</label>
+            <input type="date" class="form-control" name="dob" required id="dob" />
+          </div>
+          <div class="col-md-6">
+            <label for="domicile" class="form-label">Domicile</label>
+            <select class="form-select" name="domicile" id="domicile" required>
+              <option value="">Select Province</option>
+              <option>Punjab</option>
+              <option>Sindh</option>
+              <option>Khyber Pakhtunkhwa</option>
+              <option>Balochistan</option>
+              <option>Islamabad Capital Territory</option>
+              <option>Gilgit-Baltistan</option>
+              <option>Azad Jammu and Kashmir</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label for="city" class="form-label">City</label>
+            <input type="text" class="form-control" name="city" required id="city" />
+          </div>
+          <div class="col-md-6">
+            <label for="phone" class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" name="phone" pattern="03[0-9]{9}" placeholder="03XXXXXXXXX" required id="phone" />
+          </div>
+          <div class="col-md-6">
+            <label for="email" class="form-label">Email Address</label>
+            <input type="email" class="form-control" name="email" required id="email" />
+          </div>
+        </div>
+        <div class="step-buttons mt-4">
+          <button type="button" class="btn btn-success" onclick="nextStep()">Next</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Education Info -->
+      <div class="form-step">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Intermediate - University</label>
+            <input type="text" class="form-control" name="interUni" placeholder="or N/A" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Intermediate - CGPA</label>
+            <input type="text" class="form-control" name="interCgpa" placeholder="or N/A" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Bachelor's - University</label>
+            <input type="text" class="form-control" name="bachelorUni" placeholder="or N/A" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Bachelor's - CGPA</label>
+            <input type="text" class="form-control" name="bachelorCgpa" placeholder="or N/A" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Master's - University</label>
+            <input type="text" class="form-control" name="masterUni" placeholder="or N/A" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Master's - CGPA</label>
+            <input type="text" class="form-control" name="masterCgpa" placeholder="or N/A" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">PhD - University</label>
+            <input type="text" class="form-control" name="phdUni" placeholder="or N/A" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">PhD - CGPA</label>
+            <input type="text" class="form-control" name="phdCgpa" placeholder="or N/A" />
+          </div>
+          <div class="col-md-12">
+            <label class="form-label">Scholarship to Apply For</label>
+            <select class="form-select" name="scholarshipType" required>
+              <option value="">Select Scholarship</option>
+              <option>Intermediate Scholarship (Pakistan)</option>
+              <option>Bachelor's Scholarship (Pakistan)</option>
+              <option>Master's Scholarship (Pakistan)</option>
+              <option>PhD Scholarship (Pakistan)</option>
+              <option>Study Abroad SNPL Scholarship</option>
+            </select>
+          </div>
+        </div>
+        <div class="step-buttons mt-4">
+          <button type="button" class="btn btn-secondary" onclick="prevStep()">Previous</button>
+          <button type="button" class="btn btn-success" onclick="nextStep()">Next</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Upload Documents -->
+      <div class="form-step">
+        <label class="form-label">Upload All Degree PDFs (Combine into One File or Upload Multiple)</label>
+        <input type="file" class="form-control" name="documents" accept=".pdf" multiple required />
+        <div class="step-buttons mt-4">
+          <button type="button" class="btn btn-secondary" onclick="prevStep()">Previous</button>
+          <button type="submit" class="btn btn-success">Submit Application</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-success text-white text-center py-3">
+  <p class="mb-0">© 2025 EduAid | Empowering Education in Pakistan</p>
+</footer>
+
+<!-- Scripts -->
+<script>
+  let currentStep = 0;
+  const steps = document.querySelectorAll(".form-step");
+
+  function showStep(index) {
+    steps.forEach((step, i) => {
+      step.classList.toggle("active", i === index);
+    });
+  }
+
+  function nextStep() {
+    if (currentStep < steps.length - 1) {
+      currentStep++;
+      showStep(currentStep);
+    }
+  }
+
+  function prevStep() {
+    if (currentStep > 0) {
+      currentStep--;
+      showStep(currentStep);
+    }
+  }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EduAid - Admin Panel</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    table th, table td { vertical-align: middle; }
+    .status-select { min-width: 150px; }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center" href="index.html">
+      <img src="images/logo.png" alt="EduAid Logo" height="40" class="me-2" />
+      <span class="fw-bold text-success">EduAid Admin</span>
+    </a>
+    <div class="collapse navbar-collapse justify-content-end">
+      <a class="btn btn-danger" href="/logout">Logout</a>
+    </div>
+  </div>
+</nav>
+
+<!-- Admin Panel -->
+<section class="py-5">
+  <div class="container">
+    <h2 class="text-success mb-4 text-center">Manage Applications</h2>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead class="table-success">
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Father Name</th>
+            <th>Scholarship</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="applicationsTable">
+          <tr><td colspan="6" class="text-center">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-success text-white text-center py-3">
+  <p class="mb-0">© 2025 EduAid | Admin Panel</p>
+</footer>
+
+<script>
+fetch('/api/applications')
+  .then(res => res.json())
+  .then(data => {
+    const table = document.getElementById('applicationsTable');
+    if (data.length === 0) {
+      table.innerHTML = '<tr><td colspan="6" class="text-center">No applications found.</td></tr>';
+      return;
+    }
+    table.innerHTML = '';
+    data.forEach(app => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${app.id}</td>
+        <td>${app.name}</td>
+        <td>${app.father_name}</td>
+        <td>${app.scholarship_type}</td>
+        <td>
+          <select class="form-select status-select" onchange="updateStatus(${app.id}, this.value)">
+            <option ${app.status === 'Unverified' ? 'selected' : ''}>Unverified</option>
+            <option ${app.status === 'Verified' ? 'selected' : ''}>Verified</option>
+            <option ${app.status === 'Granted' ? 'selected' : ''}>Granted</option>
+            <option ${app.status === 'Not Eligible' ? 'selected' : ''}>Not Eligible</option>
+          </select>
+        </td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="deleteApp(${app.id})">Delete</button>
+        </td>
+      `;
+      table.appendChild(row);
+    });
+  });
+
+function updateStatus(id, status) {
+  fetch('/api/update-status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `id=${id}&status=${status}`
+  }).then(res => res.text()).then(alert);
+}
+
+function deleteApp(id) {
+  if (!confirm('Are you sure you want to delete this application?')) return;
+  fetch('/api/delete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `id=${id}`
+  }).then(res => res.text()).then(() => location.reload());
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

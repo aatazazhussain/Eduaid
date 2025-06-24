@@ -1,0 +1,287 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: white;
+  margin: 0;
+  padding: 0;
+}
+
+/* Hero Section - moved up under navbar */
+.hero-section {
+  background-color: #014421;
+  color: white;
+  padding: 60px 0;
+  background-size: cover;
+  background-position: center;
+  text-align: center;
+}
+
+.hero-section h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.hero-section p {
+  font-size: 1.2rem;
+}
+
+/* Our Inspiration Section */
+.inspiration-section {
+  padding: 40px 0;
+  background-color: #f0fdf4;
+}
+
+.inspiration-img {
+  border-radius: 8px;
+  max-height: 250px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Paragraph Justification */
+.inspiration-section p {
+  font-size: 1rem;
+  color: #333;
+  margin-top: 0;
+}
+
+/* Buttons */
+.btn-outline-success {
+  border-radius: 8px;
+  padding: 6px 16px;
+  font-size: 0.95rem;
+  transition: 0.3s ease;
+}
+
+.btn-outline-success:hover {
+  background-color: #198754;
+  color: white;
+}
+
+/* Card Titles and Text */
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.card-text {
+  font-size: 0.875rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .inspiration-img {
+    max-height: 200px;
+  }
+
+  .hero-section h1 {
+    font-size: 1.8rem;
+  }
+
+  .hero-section p {
+    font-size: 1rem;
+  }
+}
+
+.quote-box {
+  background-color: #017b5f; /* Pakistan green */
+  padding: 30px;
+  border-radius: 10px;
+  max-width: 800px;
+}
+/* How It Works Section */
+.how-it-works-section {
+  padding: 60px 0;
+  background-color: #f0fdf4;
+}
+
+.how-step {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+  text-align: center;
+  transition: 0.3s ease;
+  height: 100%;
+}
+
+.how-step:hover {
+  transform: translateY(-5px);
+}
+
+.how-step-icon {
+  font-size: 40px;
+  color: #198754;
+  margin-bottom: 15px;
+}
+
+.how-step-title {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #014421;
+}
+
+.how-step-desc {
+  font-size: 0.95rem;
+  color: #555;
+}
+.scholarship-section {
+  padding: 60px 0;
+  background-color: #f0fdf4;
+}
+
+.scholarship-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+  transition: 0.3s ease;
+  height: 100%;
+}
+
+.scholarship-card:hover {
+  transform: translateY(-5px);
+}
+
+.scholarship-card h5 {
+  color: #014421;
+  font-weight: bold;
+}
+
+.scholarship-card ul {
+  padding-left: 18px;
+}
+
+.scholarship-card ul li {
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+.about-section {
+  padding: 60px 0;
+  background-color: #f0fdf4;
+}
+
+.about-section h3 {
+  color: #014421;
+  font-weight: 600;
+}
+
+.about-img {
+  border-radius: 10px;
+  max-width: 100%;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+.values-list li {
+  margin-bottom: 10px;
+  font-size: 1rem;
+  color: #444;
+}
+
+.vision-quote {
+  background-color: #017b5f;
+  color: white;
+  padding: 40px;
+  border-radius: 10px;
+  text-align: center;
+}
+.news-section {
+  padding: 60px 0;
+  background-color: #f8fdf9;
+}
+
+.news-card {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.07);
+  transition: transform 0.3s ease;
+  height: 100%;
+}
+
+.news-card:hover {
+  transform: translateY(-5px);
+}
+
+.news-card img {
+  height: 200px;
+  object-fit: cover;
+}
+
+.news-card .card-body h5 {
+  color: #014421;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.news-card .card-body p {
+  font-size: 0.9rem;
+  color: #555;
+}
+.contact-section {
+  padding: 60px 0;
+  background-color: #f0fdf4;
+}
+
+.contact-card {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.contact-card h5 {
+  font-weight: 600;
+  color: #014421;
+}
+
+.social-icons a {
+  font-size: 1.4rem;
+  margin-right: 15px;
+  color: #198754;
+  transition: 0.3s;
+}
+
+.social-icons a:hover {
+  color: #0b5e34;
+}
+
+.apply-now {
+  background-color: #017b5f;
+  color: white;
+  padding: 40px;
+  text-align: center;
+  border-radius: 12px;
+  margin-top: 40px;
+}
+
+.apply-now a {
+  display: inline-block;
+  margin-top: 15px;
+  padding: 10px 24px;
+  background-color: white;
+  color: #017b5f;
+  font-weight: bold;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+.apply-now a:hover {
+  background-color: #f0fdf4;
+}
+.apply-btn {
+  display: inline-block;
+  margin-top: 15px;
+  padding: 8px 20px;
+  background-color: #017b5f;
+  color: white;
+  font-weight: 500;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: 0.3s ease;
+}
+
+.apply-btn:hover {
+  background-color: #025e46;
+}
+
