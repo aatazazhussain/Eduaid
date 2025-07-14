@@ -1,9 +1,9 @@
-const express = require('express');
-const session = require('express-session');
-const bodyParser = require('body-parser');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const multer = require('multer');
+const express = require("express");
+const session = require("express-session");
+const bodyParser = require("body-parser");
+const sqlite3 = require("sqlite3").verbose();
+const path = require("path");
+const multer = require("multer");
 const app = express();
 const PORT = 3000;
 
@@ -12,54 +12,145 @@ const upload = multer();
 
 // Setup express-session
 app.use(session({
-  secret: 'eduaid_admin_secret',
+  secret: "eduaid_admin_secret",
   resave: false,
   saveUninitialized: true,
-  cookie: { maxAge: 1 * 60 * 60 * 1000 } // 1 hour
+  cookie: { maxAge: 1 * 60 * 60 * 1000 }, // 1 hour
 }));
 
 // Connect to SQLite
-const db = new sqlite3.Database(path.join(__dirname, 'data', 'eduaid.db'), (err) => {
-  if (err) return console.error('Database connection error:', err.message);
-  console.log('✅ Connected to SQLite database');
+const db = new sqlite3.Database(
+  path.join(__dirname, "data", "eduaid.db"),
+  (err) => {
+    if (err) return console.error("Database connection error:", err.message);
+    console.log("✅ Connected to SQLite database");
+  }
+);
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "visionofaatazaz@gmail.com",
+    pass: "gymi lozw nkvw dfwo"
+  }
+});
+db.run(`CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  email TEXT UNIQUE,
+  password TEXT
+)`);
+
+// Create tables if not exist
+db.run(`CREATE TABLE IF NOT EXISTS applications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  father_name TEXT,
+  dob TEXT,
+  domicile TEXT,
+  city TEXT,
+  phone TEXT,
+  email TEXT,
+  inter_uni TEXT,
+  inter_cgpa TEXT,
+  bachelor_uni TEXT,
+  bachelor_cgpa TEXT,
+  master_uni TEXT,
+  master_cgpa TEXT,
+  phd_uni TEXT,
+  phd_cgpa TEXT,
+  scholarship_type TEXT,
+  status TEXT DEFAULT 'Unverified',
+  submitted_at TEXT DEFAULT CURRENT_TIMESTAMP
+)`);
+
+db.run(`CREATE TABLE IF NOT EXISTS scholarships (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  description TEXT,
+  eligibility TEXT,
+  deadline TEXT,
+  seats_left INTEGER
+)`);
+
+// Ensure 'notified' column exists (adds once)
+db.all("PRAGMA table_info(applications);", (err, columns) => {
+  if (err) return console.error("❌ Failed to inspect table:", err.message);
+
+  const hasNotified = columns.some(col => col.name === 'notified');
+  if (!hasNotified) {
+    db.run(`ALTER TABLE applications ADD COLUMN notified INTEGER DEFAULT 0`, (err) => {
+      if (err) return console.error("❌ Failed to alter table:", err.message);
+      console.log("✅ 'notified' column added to applications table.");
+    });
+  }
 });
 
-// Create table if not exists
-db.run(`
-  CREATE TABLE IF NOT EXISTS applications (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    father_name TEXT,
-    dob TEXT,
-    domicile TEXT,
-    city TEXT,
-    phone TEXT,
-    email TEXT,
-    inter_uni TEXT,
-    inter_cgpa TEXT,
-    bachelor_uni TEXT,
-    bachelor_cgpa TEXT,
-    master_uni TEXT,
-    master_cgpa TEXT,
-    phd_uni TEXT,
-    phd_cgpa TEXT,
-    scholarship_type TEXT,
-    status TEXT DEFAULT 'Unverified',
-    submitted_at TEXT DEFAULT CURRENT_TIMESTAMP
-  )
-`);
 
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static('public'));
-app.set('view engine', 'ejs');
+app.use(express.static("public"));
+app.set("view engine", "ejs");
 
-// Home route
-app.get('/', (req, res) => {
-  res.send('EduAid Backend Running 🚀');
+// Routes
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "home.html"));
+});
+
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
+const JWT_SECRET = "eduaid_user_secret"; // Keep this secure
+
+// User registration
+app.post("/api/register", upload.none(), async (req, res) => {
+  const { name, email, password } = req.body;
+if (email === "admin@gmail.com" || name.toLowerCase() === "admin") {
+  return res.status(403).send("Registration using admin credentials is not allowed.");
+}
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const query = `INSERT INTO users (name, email, password) VALUES (?, ?, ?)`;
+
+  db.run(query, [name, email, hashedPassword], function (err) {
+    if (err) {
+      console.error(err.message);
+      return res.status(400).send("User already exists or invalid data.");
+    }
+    res.send("User registered successfully.");
+  });
+});
+app.post("/api/login", upload.none(), (req, res) => {
+  const { email, password } = req.body;
+
+  db.get("SELECT * FROM users WHERE email = ?", [email], async (err, user) => {
+    if (err || !user) return res.status(401).send("Invalid credentials.");
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).send("Invalid credentials.");
+
+    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "2h" });
+    res.json({ token, name: user.name });
+  });
+});
+function verifyUserToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+}
+app.get("/api/user-profile", verifyUserToken, (req, res) => {
+  res.json({ message: "Welcome to your profile", user: req.user });
 });
 
 // Application submission
-app.post('/submit-application', upload.single('documents'), (req, res) => {
+app.post("/submit-application", upload.single("documents"), (req, res) => {
   const data = req.body;
   const query = `
     INSERT INTO applications (
@@ -74,32 +165,30 @@ app.post('/submit-application', upload.single('documents'), (req, res) => {
   const values = [
     data.name, data.fatherName, data.dob, data.domicile, data.city,
     data.phone, data.email,
-    data.interUni || 'N/A', data.interCgpa || 'N/A',
-    data.bachelorUni || 'N/A', data.bachelorCgpa || 'N/A',
-    data.masterUni || 'N/A', data.masterCgpa || 'N/A',
-    data.phdUni || 'N/A', data.phdCgpa || 'N/A',
+    data.interUni || "N/A", data.interCgpa || "N/A",
+    data.bachelorUni || "N/A", data.bachelorCgpa || "N/A",
+    data.masterUni || "N/A", data.masterCgpa || "N/A",
+    data.phdUni || "N/A", data.phdCgpa || "N/A",
     data.scholarshipType
   ];
   db.run(query, values, function (err) {
     if (err) {
       console.error(err.message);
-      return res.status(500).send('Something went wrong.');
+      return res.status(500).send("Something went wrong.");
     }
-    console.log('✅ Application saved to database:', data);
-    res.send('Application submitted successfully!');
+    res.send("Application submitted successfully!");
   });
 });
 
-// Status viewer form page
-app.get('/status', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'status.html'));
+// Application status check
+app.get("/status", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "status.html"));
 });
 
-// Status results (updated with Bootstrap styling)
-app.post('/status-check', upload.none(), (req, res) => {
+app.post("/status-check", upload.none(), (req, res) => {
   const { scholarshipType } = req.body;
   const query = `
-    SELECT name, father_name, 
+    SELECT name, father_name,
       CASE 
         WHEN phd_cgpa != 'N/A' AND phd_cgpa != '' THEN 'PhD'
         WHEN master_cgpa != 'N/A' AND master_cgpa != '' THEN 'Master'
@@ -112,123 +201,243 @@ app.post('/status-check', upload.none(), (req, res) => {
     WHERE scholarship_type = ?
   `;
   db.all(query, [scholarshipType], (err, rows) => {
-    if (err) return res.status(500).send('Error fetching status.');
+    if (err) return res.status(500).send("Error fetching status.");
 
     let html = `
-      <!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <title>Application Status Result</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-      </head>
-      <body class="bg-light">
-        <div class="container py-5">
-          <h2 class="text-center text-success mb-4">Applications for: ${scholarshipType}</h2>
-          <div class="table-responsive">
-            <table class="table table-bordered shadow-sm table-hover bg-white">
-              <thead class="table-success text-center">
-                <tr>
-                  <th>Name</th>
-                  <th>Father Name</th>
-                  <th>Highest Degree</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-    `;
+    <html><head><title>Status</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    </head><body class="bg-light">
+    <div class="container py-5">
+    <h2 class="text-center text-success">Applications for: ${scholarshipType}</h2>
+    <table class="table table-bordered bg-white">
+      <thead class="table-success text-center">
+        <tr><th>Name</th><th>Father Name</th><th>Highest Degree</th><th>Status</th></tr>
+      </thead><tbody>`;
 
     rows.forEach(row => {
-      const badgeColor =
-        row.status === 'Granted' ? 'success' :
-        row.status === 'Not Eligible' ? 'danger' :
-        row.status === 'Unverified' ? 'secondary' : 'warning';
-
-      html += `
-        <tr class="text-center">
-          <td>${row.name}</td>
-          <td>${row.father_name}</td>
-          <td>${row.highest_degree}</td>
-          <td><span class="badge bg-${badgeColor}">${row.status}</span></td>
-        </tr>
-      `;
+      const badge = row.status === 'Granted' ? 'success' :
+                    row.status === 'Not Eligible' ? 'danger' :
+                    row.status === 'Verified' ? 'warning' : 'secondary';
+      html += `<tr class="text-center">
+        <td>${row.name}</td><td>${row.father_name}</td><td>${row.highest_degree}</td>
+        <td><span class="badge bg-${badge}">${row.status}</span></td></tr>`;
     });
 
-    html += `
-              </tbody>
-            </table>
-          </div>
-          <div class="text-center mt-4">
-            <a href="/status" class="btn btn-outline-success">🔙 Check Another</a>
-          </div>
-        </div>
-        <footer class="bg-success text-white text-center py-3 mt-5">
-          <p class="mb-0">© 2025 EduAid | Empowering Education in Pakistan</p>
-        </footer>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-      </body>
-      </html>
-    `;
-
+    html += `</tbody></table><div class="text-center">
+      <a href="/status" class="btn btn-outline-success">🔙 Check Another</a></div></div></body></html>`;
     res.send(html);
   });
 });
 
-// Admin login
-app.post('/admin-login', upload.none(), (req, res) => {
+// Admin login/logout
+app.post("/admin-login", upload.none(), (req, res) => {
   const { username, password } = req.body;
-  if (username === 'admin' && password === '1234') {
+  if (username === "admin" && password === "1234") {
     req.session.admin = true;
-    res.redirect('/admin-panel.html');
+    res.redirect("/admin-panel.html");
   } else {
     res.send('<h3 style="color:red; text-align:center;">Invalid credentials! <a href="/admin-login.html">Try again</a></h3>');
   }
 });
 
-// Middleware to protect admin panel
-app.get('/admin-panel.html', (req, res) => {
+app.get("/admin-panel.html", (req, res) => {
   if (req.session.admin) {
-    res.sendFile(path.join(__dirname, 'public', 'admin-panel.html'));
+    res.sendFile(path.join(__dirname, "public", "admin-panel.html"));
   } else {
-    res.redirect('/admin-login.html');
+    res.redirect("/admin-login.html");
   }
 });
 
-// Admin logout
-app.get('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/admin-login.html');
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => res.redirect("/admin-login.html"));
+});
+
+// Admin API for applications
+app.get("/api/applications", (req, res) => {
+  if (!req.session.admin) return res.status(403).send("Unauthorized");
+  db.all("SELECT * FROM applications ORDER BY submitted_at DESC", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    // Mark unseen applications as notified
+    db.run("UPDATE applications SET notified = 1 WHERE notified = 0", (err) => {
+      if (err) console.error("Failed to update notification status:", err.message);
+    });
+
+    res.json(rows);
   });
 });
 
-// Admin API routes
-app.get('/api/applications', (req, res) => {
-  if (!req.session.admin) return res.status(403).send('Unauthorized');
-  db.all('SELECT * FROM applications ORDER BY submitted_at DESC', [], (err, rows) => {
+app.get("/api/notifications", (req, res) => {
+  if (!req.session.admin) return res.status(403).send("Unauthorized");
+
+  db.get("SELECT COUNT(*) AS newCount FROM applications WHERE notified = 0", (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ newCount: row?.newCount || 0 });
+  });
+});
+
+app.post("/api/update-status", upload.none(), (req, res) => {
+  if (!req.session.admin) return res.status(403).send("Unauthorized");
+
+  const { id, status } = req.body;
+
+  // First update the status
+  db.run("UPDATE applications SET status = ? WHERE id = ?", [status, id], function (err) {
+    if (err) return res.status(500).send("Failed to update status.");
+
+    // Fetch user's email and name
+    db.get("SELECT email, name, scholarship_type FROM applications WHERE id = ?", [id], (err, row) => {
+      if (err || !row) return res.send("Status updated (email failed).");
+
+      // Compose email
+      const mailOptions = {
+        from: '"EduAid Team" <yourgmail@gmail.com>',
+        to: row.email,
+        subject: `Your Scholarship Application Status`,
+        html: `
+          <p>Dear ${row.name},</p>
+          <p>Your application for <strong>${row.scholarship_type}</strong> has been updated to: 
+          <span style="color: ${status === 'Granted' ? 'green' : status === 'Not Eligible' ? 'red' : 'orange'};">
+            <strong>${status}</strong>
+          </span>.</p>
+          <p>Thank you for applying at <strong>EduAid</strong>.</p>
+          <hr />
+          <small>Do not reply to this email.</small>
+        `
+      };
+
+      // Send the email
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error("❌ Email error:", error.message);
+          return res.send("Status updated. Email failed.");
+        }
+        console.log("✅ Email sent:", info.response);
+        res.send("Status updated and email sent.");
+      });
+    });
+
+    // Reduce seat if status is Granted
+    if (status === "Granted") {
+      db.get("SELECT scholarship_type FROM applications WHERE id = ?", [id], (err, row) => {
+        if (row && row.scholarship_type) {
+          db.run("UPDATE scholarships SET seats_left = seats_left - 1 WHERE title = ? AND seats_left > 0",
+            [row.scholarship_type], (err) => {
+              if (err) console.error("Error updating seats_left:", err.message);
+          });
+        }
+      });
+    }
+  });
+});
+
+
+app.post("/api/delete", upload.none(), (req, res) => {
+  if (!req.session.admin) return res.status(403).send("Unauthorized");
+  const { id } = req.body;
+  db.run("DELETE FROM applications WHERE id = ?", [id], (err) => {
+    if (err) return res.status(500).send("Failed to delete application.");
+    res.send("Application deleted.");
+  });
+});
+
+// Scholarship APIs
+app.get("/api/scholarships", (req, res) => {
+  const { search = "", deadline = "" } = req.query;
+  const searchTerm = `%${search.trim()}%`;
+  const deadlineTerm = `%${deadline.trim()}%`;
+
+  const query = `
+    SELECT * FROM scholarships
+    WHERE (title LIKE ? OR description LIKE ? OR eligibility LIKE ?)
+      AND deadline LIKE ?
+      AND seats_left > 0
+    ORDER BY deadline ASC
+  `;
+
+  db.all(query, [searchTerm, searchTerm, searchTerm, deadlineTerm], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 });
 
-app.post('/api/update-status', upload.none(), (req, res) => {
-  if (!req.session.admin) return res.status(403).send('Unauthorized');
-  const { id, status } = req.body;
-  db.run('UPDATE applications SET status = ? WHERE id = ?', [status, id], function (err) {
-    if (err) return res.status(500).send('Failed to update status.');
-    res.send('Status updated.');
+
+app.post("/api/scholarships/add", upload.none(), (req, res) => {
+  const { title, description, eligibility, deadline } = req.body;
+  const seats = parseInt(req.body.seats_left, 10) || 0;
+  const query = `INSERT INTO scholarships (title, description, eligibility, deadline, seats_left) VALUES (?, ?, ?, ?, ?)`;
+  db.run(query, [title, description, eligibility, deadline, seats], (err) => {
+    if (err) {
+      console.error("Add Error:", err.message);
+      return res.status(500).send("Failed to add scholarship.");
+    }
+    res.send("Scholarship added.");
   });
 });
 
-app.post('/api/delete', upload.none(), (req, res) => {
-  if (!req.session.admin) return res.status(403).send('Unauthorized');
+app.post("/api/scholarships/edit", upload.none(), (req, res) => {
+  const { id, title, description, eligibility, deadline } = req.body;
+  const seats = parseInt(req.body.seats_left, 10) || 0;
+  const query = `UPDATE scholarships SET title=?, description=?, eligibility=?, deadline=?, seats_left=? WHERE id=?`;
+  db.run(query, [title, description, eligibility, deadline, seats, id], (err) => {
+    if (err) {
+      console.error("Edit Error:", err.message);
+      return res.status(500).send("Failed to update scholarship.");
+    }
+    res.send("Scholarship updated.");
+  });
+});
+
+app.post("/api/scholarships/delete", upload.none(), (req, res) => {
   const { id } = req.body;
-  db.run('DELETE FROM applications WHERE id = ?', [id], function (err) {
-    if (err) return res.status(500).send('Failed to delete application.');
-    res.send('Application deleted.');
+  db.run("DELETE FROM scholarships WHERE id = ?", [id], (err) => {
+    if (err) return res.status(500).send("Failed to delete scholarship.");
+    res.send("Scholarship deleted.");
+  });
+});
+const PDFDocument = require("pdfkit");
+
+app.post("/api/download-selected", upload.none(), (req, res) => {
+  if (!req.session.admin) return res.status(403).send("Unauthorized");
+
+  const ids = req.body.ids; // comma-separated string of IDs
+  const idArray = ids.split(",").map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+
+  if (idArray.length === 0) return res.status(400).send("No valid IDs provided.");
+
+  const placeholders = idArray.map(() => "?").join(",");
+  const query = `SELECT * FROM applications WHERE id IN (${placeholders})`;
+
+  db.all(query, idArray, (err, rows) => {
+    if (err) return res.status(500).send("Database error");
+
+    const doc = new PDFDocument();
+    const filename = `Selected_Applications_${Date.now()}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+    doc.pipe(res);
+    doc.fontSize(18).text("Selected Applications", { align: "center" }).moveDown();
+
+    rows.forEach((app, index) => {
+      doc.fontSize(12).text(`Application #${app.id}`, { underline: true });
+      doc.text(`Name: ${app.name}`);
+      doc.text(`Father Name: ${app.father_name}`);
+      doc.text(`Email: ${app.email}`);
+      doc.text(`Phone: ${app.phone}`);
+      doc.text(`City: ${app.city}`);
+      doc.text(`Scholarship: ${app.scholarship_type}`);
+      doc.text(`Status: ${app.status}`);
+      doc.text(`Submitted: ${app.submitted_at}`);
+      doc.moveDown();
+    });
+
+    doc.end();
   });
 });
 
-// Start server
+// Start the server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });

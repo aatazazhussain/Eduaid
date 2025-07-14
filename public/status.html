@@ -6,6 +6,7 @@
   <title>EduAid - Application Status</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 </head>
 <body>
 
@@ -21,13 +22,15 @@
     </button>
     <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
       <ul class="navbar-nav">
-        <li class="nav-item"><a class="nav-link text-success" href="index.html">Home</a></li>
+        <li class="nav-item"><a class="nav-link text-success" href="index3.html">Home</a></li>
         <li class="nav-item"><a class="nav-link text-success" href="how-it-works.html">How It Works</a></li>
         <li class="nav-item"><a class="nav-link text-success" href="scholarships.html">Find Your Scholarship</a></li>
         <li class="nav-item"><a class="nav-link text-success" href="about.html">About Us</a></li>
         <li class="nav-item"><a class="nav-link text-success" href="news.html">News</a></li>
       </ul>
       <a class="btn btn-success ms-3" href="contact.html">Contact Us</a>
+      <a class="btn btn-success ms-3" href="home.html">Logout</a>
+
     </div>
   </div>
 </nav>
@@ -38,15 +41,9 @@
     <h2 class="text-center text-success mb-4">Check Your Application Status</h2>
     <form action="/status-check" method="POST" class="col-md-6 offset-md-3">
       <div class="mb-3">
-        <label for="scholarshipType" class="form-label">Select Scholarship Type</label>
         <select class="form-select" name="scholarshipType" id="scholarshipType" required>
-          <option value="">-- Select --</option>
-          <option>Intermediate Scholarship (Pakistan)</option>
-          <option>Bachelor's Scholarship (Pakistan)</option>
-          <option>Master's Scholarship (Pakistan)</option>
-          <option>PhD Scholarship (Pakistan)</option>
-          <option>Study Abroad SNPL Scholarship</option>
-        </select>
+  <option value="">Loading scholarships...</option>
+</select>
       </div>
       <div class="text-end">
         <button type="submit" class="btn btn-success">Check Status</button>
@@ -59,7 +56,28 @@
 <footer class="bg-success text-white text-center py-3">
   <p class="mb-0">© 2025 EduAid | Empowering Education in Pakistan</p>
 </footer>
-
+<script>
+  // Fetch real-time scholarships from server
+  fetch('/api/scholarships', { credentials: 'include' })
+    .then(res => res.json())
+    .then(data => {
+      const dropdown = document.getElementById('scholarshipType');
+      dropdown.innerHTML = '<option value="">-- Select Scholarship --</option>';
+      data.forEach(s => {
+        const option = document.createElement('option');
+        option.value = s.title;
+        option.textContent = s.title;
+        dropdown.appendChild(option);
+      });
+    })
+    .catch(err => {
+      console.error("Error fetching scholarships:", err);
+      const dropdown = document.getElementById('scholarshipType');
+      dropdown.innerHTML = '<option value="">Failed to load scholarships</option>';
+    });
+</script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init();</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
